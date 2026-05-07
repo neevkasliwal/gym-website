@@ -1,0 +1,66 @@
+.py-8 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+}
+
+.class-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.class-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+}
+
+.class-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--accent-neon);
+}
+
+.difficulty-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.difficulty-badge.beginner {
+  background-color: rgba(50, 224, 17, 0.2);
+  color: #32e011;
+}
+
+.difficulty-badge.intermediate {
+  background-color: rgba(255, 165, 0, 0.2);
+  color: #ffa500;
+}
+
+.difficulty-badge.advanced {
+  background-color: rgba(255, 0, 60, 0.2);
+  color: var(--accent-secondary);
+}
+
+.class-details p {
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+}
+
+.class-details strong {
+  color: var(--text-primary);
+}
+
+.mt-auto {
+  margin-top: auto;
+}

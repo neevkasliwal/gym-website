@@ -1,0 +1,57 @@
+.auth-container {
+  min-height: calc(100vh - 80px - 200px); /* Adjust based on navbar/footer height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  padding: 40px;
+}
+
+.auth-toggle {
+  display: flex;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: bold;
+  transition: var(--transition);
+}
+
+.toggle-btn.active {
+  background-color: var(--accent-neon);
+  color: #000;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.error-message {
+  background-color: rgba(255, 0, 60, 0.1);
+  color: var(--accent-secondary);
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 0, 60, 0.3);
+  text-align: center;
+}
+
+.auth-footer a {
+  transition: var(--transition);
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
