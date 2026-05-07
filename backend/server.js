@@ -38,8 +38,12 @@ const connectDB = async () => {
     const count = await Class.countDocuments();
     if (count === 0) {
       await Class.insertMany([
-        { name: 'HIIT Extreme', trainer: 'Alex Johnson', capacity: 20, difficulty: 'Advanced', schedule: { day: 'Monday', time: '18:00' } },
-        { name: 'Power Yoga', trainer: 'Sarah Williams', capacity: 15, difficulty: 'Beginner', schedule: { day: 'Tuesday', time: '07:00' } },
+        { title: 'HIIT Extreme', trainer: 'Alex Johnson', day: 'Monday', time: '18:00', capacity: 20, difficulty: 'Advanced' },
+        { title: 'Power Yoga', trainer: 'Sarah Williams', day: 'Tuesday', time: '07:00', capacity: 15, difficulty: 'Beginner' },
+        { title: 'Strength Foundations', trainer: 'Mike Carter', day: 'Wednesday', time: '19:00', capacity: 18, difficulty: 'Intermediate' },
+        { title: 'Spin Burn', trainer: 'Emily Chen', day: 'Thursday', time: '06:30', capacity: 22, difficulty: 'Beginner' },
+        { title: 'Core & Conditioning', trainer: 'Jordan Lee', day: 'Friday', time: '17:30', capacity: 20, difficulty: 'Intermediate' },
+        { title: 'Weekend Warrior', trainer: 'Priya Singh', day: 'Saturday', time: '09:00', capacity: 25, difficulty: 'Advanced' },
       ]);
       console.log('Mock classes initialized');
     }

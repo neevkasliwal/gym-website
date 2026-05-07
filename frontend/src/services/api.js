@@ -2,7 +2,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // Helper to get auth token
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
+  if (typeof window === 'undefined') return {};
+  const token = window.localStorage.getItem('token');
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
@@ -17,10 +18,23 @@ const fetchAPI = async (endpoint, options = {}) => {
   };
 
   const response = await fetch(url, { ...options, headers });
-  const data = await response.json();
+
+  const contentType = response.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+
+  let data;
+  try {
+    data = isJson ? await response.json() : await response.text();
+  } catch {
+    data = null;
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || 'API request failed');
+    const message =
+      (data && typeof data === 'object' && data.message) ||
+      (typeof data === 'string' && data.trim()) ||
+      `API request failed (${response.status})`;
+    throw new Error(message);
   }
 
   return data;

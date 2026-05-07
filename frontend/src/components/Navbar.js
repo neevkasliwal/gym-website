@@ -31,6 +31,7 @@ export default function Navbar() {
         <div className={`nav-links ${isMobileMenuOpen ? 'open' : ''}`}>
           <Link href="/about">About</Link>
           <Link href="/classes">Classes</Link>
+          <Link href="/gallery">Gallery</Link>
           <Link href="/trainers">Trainers</Link>
           <Link href="/memberships">Memberships</Link>
           <Link href="/auth/login" className="btn btn-primary">Login</Link>

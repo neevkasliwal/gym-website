@@ -1,0 +1,115 @@
+.memberships-page {
+  position: relative;
+}
+
+.memberships-hero {
+  position: relative;
+  padding: 90px 0 60px;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(0, 255, 153, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 90% 20%, rgba(0, 153, 255, 0.10), transparent 55%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.65));
+}
+
+.memberships-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1400&auto=format&fit=crop') center/cover no-repeat;
+  opacity: 0.18;
+  filter: saturate(1.1) contrast(1.05);
+  pointer-events: none;
+}
+
+.memberships-title {
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.02em;
+}
+
+.memberships-subtitle {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin-top: 12px;
+}
+
+.memberships-cta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.memberships-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.membership-card {
+  position: relative;
+  padding: 22px;
+}
+
+.membership-card.featured {
+  border: 1px solid rgba(0, 255, 153, 0.35);
+  box-shadow: 0 0 0 1px rgba(0, 255, 153, 0.12), 0 12px 40px rgba(0, 0, 0, 0.35);
+  transform: translateY(-4px);
+}
+
+.membership-name {
+  margin-bottom: 10px;
+}
+
+.membership-price {
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.05;
+  margin: 10px 0;
+}
+
+.membership-price span {
+  font-size: 16px;
+  opacity: 0.7;
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+.membership-tagline {
+  margin-top: 4px;
+}
+
+.membership-features {
+  margin-top: 16px;
+  padding-left: 18px;
+}
+
+.membership-features li {
+  margin: 8px 0;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.membership-faq .faq-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.faq-item {
+  padding: 18px;
+}
+
+@media (max-width: 900px) {
+  .memberships-grid,
+  .membership-faq .faq-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .membership-card.featured {
+    transform: none;
+  }
+}
+
