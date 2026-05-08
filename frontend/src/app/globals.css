@@ -1,21 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&display=swap');
 
 :root {
-  --bg-primary: #050505;
-  --bg-secondary: #121212;
-  --bg-tertiary: #1a1a1a;
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #111111;
   
   --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
+  --text-secondary: #b0b0b0;
   
-  --accent-neon: #39ff14; /* Neon Green */
-  --accent-hover: #32e011;
-  --accent-secondary: #ff003c; /* Neon Red/Pink for destructive actions */
+  --accent-neon: #ff003c; /* Neon Red */
+  --accent-hover: #e60036;
+  --accent-secondary: #ff2b2b;
+  --accent-primary: #ff003c;
   
-  --border-color: #2a2a2a;
-  --glass-bg: rgba(18, 18, 18, 0.7);
+  --gradient-primary: linear-gradient(135deg, #ff003c 0%, #7d001d 100%);
   
-  --transition: all 0.3s ease;
+  --border-color: #1f1f1f;
+  --glass-bg: rgba(0, 0, 0, 0.8);
+  
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 }
 
 * {
@@ -75,13 +81,13 @@ button {
 
 .btn-primary {
   background-color: var(--accent-neon);
-  color: #000;
-  box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 0, 60, 0.3);
 }
 
 .btn-primary:hover {
   background-color: var(--accent-hover);
-  box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+  box-shadow: 0 0 20px rgba(255, 0, 60, 0.6);
   transform: translateY(-2px);
 }
 
@@ -107,7 +113,7 @@ button {
 
 .card:hover {
   transform: translateY(-5px);
-  border-color: rgba(57, 255, 20, 0.3);
+  border-color: rgba(255, 0, 60, 0.3);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
@@ -136,7 +142,7 @@ button {
 
 .input-field:focus {
   border-color: var(--accent-neon);
-  box-shadow: 0 0 0 2px rgba(57, 255, 20, 0.2);
+  box-shadow: 0 0 0 2px rgba(255, 0, 60, 0.2);
 }
 
 /* Utilities */
@@ -164,9 +170,9 @@ button {
 }
 
 @keyframes pulseNeon {
-  0% { box-shadow: 0 0 10px rgba(57, 255, 20, 0.3); }
-  50% { box-shadow: 0 0 25px rgba(57, 255, 20, 0.7); }
-  100% { box-shadow: 0 0 10px rgba(57, 255, 20, 0.3); }
+  0% { box-shadow: 0 0 10px rgba(255, 0, 60, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(255, 0, 60, 0.7); }
+  100% { box-shadow: 0 0 10px rgba(255, 0, 60, 0.3); }
 }
 
 .animate-fade-in {

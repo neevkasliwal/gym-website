@@ -32,7 +32,7 @@ export default function Login() {
         email,
         password,
         role: isAdmin ? 'admin' : 'member',
-        adminKey: isAdmin ? adminKey : undefined
+        adminSecretKey: isAdmin ? adminKey : undefined
       });
 
       // Save token

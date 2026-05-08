@@ -85,14 +85,15 @@ export const bookingAPI = {
 
 // Payments API
 export const paymentAPI = {
-  createIntent: (amount) => fetchAPI('/payments/create-intent', {
-    method: 'POST',
-    body: JSON.stringify({ amount }),
-  }),
-  verify: (paymentData) => fetchAPI('/payments/verify', {
+  create: (paymentData) => fetchAPI('/payments', {
     method: 'POST',
     body: JSON.stringify(paymentData),
   }),
+  getMyPayments: () => fetchAPI('/payments/user'),
+  getAll: () => fetchAPI('/payments'), // Admin only
+  approve: (id) => fetchAPI(`/payments/${id}/approve`, {
+    method: 'PUT',
+  }), // Admin only
 };
 
 // Contact API

@@ -20,6 +20,15 @@ app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 
+// Error Handler
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ message: 'Invalid JSON body' });
+  }
+  console.error(err.stack);
+  res.status(500).json({ message: err.message || 'Internal Server Error' });
+});
+
 app.get('/', (req, res) => {
   res.send('Gym API is running');
 });
@@ -27,25 +36,32 @@ app.get('/', (req, res) => {
 // Database connection
 const connectDB = async () => {
   try {
-    const { MongoMemoryServer } = require('mongodb-memory-server');
-    const mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-    console.log('Mock MongoDB Connected at', mongoUri);
+    const useMockDb = process.env.USE_MOCK_DB === 'true' || !process.env.MONGO_URI;
 
-    // Initialize mock classes if empty
-    const Class = require('./models/Class');
-    const count = await Class.countDocuments();
-    if (count === 0) {
-      await Class.insertMany([
-        { title: 'HIIT Extreme', trainer: 'Alex Johnson', day: 'Monday', time: '18:00', capacity: 20, difficulty: 'Advanced' },
-        { title: 'Power Yoga', trainer: 'Sarah Williams', day: 'Tuesday', time: '07:00', capacity: 15, difficulty: 'Beginner' },
-        { title: 'Strength Foundations', trainer: 'Mike Carter', day: 'Wednesday', time: '19:00', capacity: 18, difficulty: 'Intermediate' },
-        { title: 'Spin Burn', trainer: 'Emily Chen', day: 'Thursday', time: '06:30', capacity: 22, difficulty: 'Beginner' },
-        { title: 'Core & Conditioning', trainer: 'Jordan Lee', day: 'Friday', time: '17:30', capacity: 20, difficulty: 'Intermediate' },
-        { title: 'Weekend Warrior', trainer: 'Priya Singh', day: 'Saturday', time: '09:00', capacity: 25, difficulty: 'Advanced' },
-      ]);
-      console.log('Mock classes initialized');
+    if (useMockDb) {
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const mongoServer = await MongoMemoryServer.create();
+      const mongoUri = mongoServer.getUri();
+      await mongoose.connect(mongoUri);
+      console.log('Mock MongoDB Connected at', mongoUri);
+
+      // Initialize mock classes if empty (mock DB only)
+      const Class = require('./models/Class');
+      const count = await Class.countDocuments();
+      if (count === 0) {
+        await Class.insertMany([
+          { title: 'HIIT Extreme', trainer: 'Alex Johnson', day: 'Monday', time: '18:00', capacity: 20, difficulty: 'Advanced' },
+          { title: 'Power Yoga', trainer: 'Sarah Williams', day: 'Tuesday', time: '07:00', capacity: 15, difficulty: 'Beginner' },
+          { title: 'Strength Foundations', trainer: 'Mike Carter', day: 'Wednesday', time: '19:00', capacity: 18, difficulty: 'Intermediate' },
+          { title: 'Spin Burn', trainer: 'Emily Chen', day: 'Thursday', time: '06:30', capacity: 22, difficulty: 'Beginner' },
+          { title: 'Core & Conditioning', trainer: 'Jordan Lee', day: 'Friday', time: '17:30', capacity: 20, difficulty: 'Intermediate' },
+          { title: 'Weekend Warrior', trainer: 'Priya Singh', day: 'Saturday', time: '09:00', capacity: 25, difficulty: 'Advanced' },
+        ]);
+        console.log('Mock classes initialized');
+      }
+    } else {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log('MongoDB Connected');
     }
 
   } catch (error) {

@@ -130,7 +130,70 @@ export default function MemberDashboard() {
           </div>
         )}
 
-        {/* Other tabs content */}
+        {activeTab === 'billing' && (
+          <div className="animate-fade-in">
+            <h2>Membership & Billing</h2>
+            
+            <div className="stats-grid mt-4">
+              <div className="stat-card">
+                <h3>Membership Status</h3>
+                <p className={`stat-value ${memberData.membershipStatus === 'active' ? 'text-neon' : 'text-secondary'}`}>
+                  {memberData.membershipStatus.toUpperCase()}
+                </p>
+                <p className="stat-desc">Plan: {memberData.membershipStatus === 'active' ? 'Premium' : 'None'}</p>
+              </div>
+            </div>
+
+            <div className="billing-container mt-8">
+              <div className="card billing-card">
+                <h3>Upgrade to <span className="text-neon">Premium</span></h3>
+                <p className="text-secondary mb-4">Pay ₹999 for 30 days of full access.</p>
+                
+                <div className="qr-section text-center mb-6">
+                  <img src="/payment_qr.png" alt="Payment QR Code" className="payment-qr" />
+                  <p className="mt-2 text-secondary">Scan with any UPI app</p>
+                  <p className="font-bold text-neon">neevkasliwal-1@okicici</p>
+                </div>
+
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const transactionId = e.target.transactionId.value;
+                  if (!transactionId) return alert('Please enter Transaction ID');
+                  
+                  try {
+                    await paymentAPI.create({
+                      amount: 999,
+                      planType: 'Monthly Premium',
+                      transactionId
+                    });
+                    alert('Payment submitted! Admin will verify and approve your membership soon.');
+                    e.target.reset();
+                  } catch (err) {
+                    alert('Failed to submit payment: ' + err.message);
+                  }
+                }}>
+                  <div className="input-group">
+                    <label htmlFor="transactionId">Transaction ID / UTR</label>
+                    <input 
+                      type="text" 
+                      id="transactionId" 
+                      name="transactionId"
+                      className="input-field" 
+                      placeholder="Enter 12-digit UTR number"
+                      required 
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary w-100">Submit Payment Info</button>
+                </form>
+              </div>
+
+              <div className="content-section mt-8">
+                <h3>Payment History</h3>
+                <p className="text-secondary mt-2">No previous payments found.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

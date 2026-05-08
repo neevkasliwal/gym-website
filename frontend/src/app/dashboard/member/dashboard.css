@@ -193,7 +193,24 @@
     bottom: 0;
   }
   
-  .dashboard-content {
-    padding: 20px;
-  }
+.billing-card {
+  max-width: 500px;
+  margin: 0 auto;
 }
+
+.qr-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: 25px;
+  color: #000;
+}
+
+.payment-qr {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+}
+
+.mb-6 { margin-bottom: 1.5rem; }
+.font-bold { font-weight: 700; }

@@ -1,12 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { paymentAPI } from '../../../services/api';
 import './dashboard.css';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  // Mock data
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const data = await paymentAPI.getAll();
+        setPayments(data);
+      } catch (err) {
+        console.error('Failed to fetch payments:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPayments();
+  }, []);
+
+  const handleApprove = async (id) => {
+    try {
+      await paymentAPI.approve(id);
+      setPayments(payments.map(p => p._id === id ? { ...p, status: 'approved' } : p));
+      alert('Payment approved and membership activated!');
+    } catch (err) {
+      alert('Failed to approve: ' + err.message);
+    }
+  };
+
+  // Mock data for other stats
   const adminData = {
     name: 'Admin User',
     stats: {
@@ -147,7 +174,88 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Other tabs content */}
+        {activeTab === 'payments' && (
+          <div className="animate-fade-in">
+            <div className="admin-header-row">
+              <h2>Pending Payments</h2>
+            </div>
+            
+            <div className="admin-table-container mt-4">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Amount</th>
+                    <th>Plan</th>
+                    <th>UTR / Transaction ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.filter(p => p.status === 'pending').map(payment => (
+                    <tr key={payment._id}>
+                      <td>{payment.userId?.name || 'Unknown'}</td>
+                      <td>{payment.userId?.email || 'N/A'}</td>
+                      <td>₹{payment.amount}</td>
+                      <td>{payment.planType}</td>
+                      <td className="text-neon">{payment.transactionId}</td>
+                      <td>
+                        <span className="status-badge pending">Pending</span>
+                      </td>
+                      <td>
+                        <button 
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleApprove(payment._id)}
+                        >
+                          Approve
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {payments.filter(p => p.status === 'pending').length === 0 && (
+                    <tr>
+                      <td colSpan="7" className="text-center py-8 text-secondary">
+                        No pending payments to review.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="admin-section mt-8">
+              <h3>Approved History</h3>
+              <div className="admin-table-container mt-4">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Amount</th>
+                      <th>Transaction ID</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.filter(p => p.status === 'approved').map(payment => (
+                      <tr key={payment._id}>
+                        <td>{payment.userId?.name || 'Unknown'}</td>
+                        <td>₹{payment.amount}</td>
+                        <td>{payment.transactionId}</td>
+                        <td>{new Date(payment.transactionDate).toLocaleDateString()}</td>
+                        <td>
+                          <span className="status-badge confirmed">Approved</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
