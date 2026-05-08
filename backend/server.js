@@ -59,6 +59,19 @@ const connectDB = async () => {
         ]);
         console.log('Mock classes initialized');
       }
+
+      // Initialize default admin if none exists
+      const User = require('./models/User');
+      const adminExists = await User.findOne({ role: 'admin' });
+      if (!adminExists) {
+        await User.create({
+          name: 'System Admin',
+          email: 'admin@ironcore.com',
+          password: 'admin123',
+          role: 'admin'
+        });
+        console.log('Default admin created: admin@ironcore.com / admin123');
+      }
     } else {
       await mongoose.connect(process.env.MONGO_URI);
       console.log('MongoDB Connected');
