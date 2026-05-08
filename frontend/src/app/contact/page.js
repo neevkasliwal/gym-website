@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { contactAPI } from '../../services/api';
 import './contact.css';
 
 export default function Contact() {
@@ -19,8 +20,7 @@ export default function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Typically this would call our backend API
-      // const res = await fetch('http://localhost:5000/api/contact', { ... });
+      await contactAPI.submit(formData);
       setStatus({ type: 'success', text: 'Message sent successfully. We will get back to you soon!' });
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (err) {

@@ -7,8 +7,8 @@ import { classAPI } from '../../services/api';
 
 export default function Classes() {
   const [classes, setClasses] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('All');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -16,54 +16,82 @@ export default function Classes() {
         const data = await classAPI.getAll();
         setClasses(data);
       } catch (err) {
-        setError('Failed to load classes.');
-        console.error(err);
+        console.error('Failed to fetch classes:', err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchClasses();
   }, []);
 
-  return (
-    <div className="container py-8 animate-fade-in">
-      <div className="section-header text-center mb-8">
-        <h2>Our <span className="text-neon">Classes</span></h2>
-        <p className="text-secondary">Find the perfect class to crush your goals.</p>
-      </div>
+  const categories = ['All', ...new Set(classes.map(c => c.category))];
 
-      {loading ? (
-        <div className="text-center text-secondary">Loading classes...</div>
-      ) : error ? (
-        <div className="text-center error-message">{error}</div>
-      ) : (
-        <div className="classes-grid">
-          {classes.map((cls, index) => (
-            <div key={cls._id || cls.id} className={`card class-card animate-fade-in stagger-${(index % 5) + 1}`}>
-              <div className="class-header">
-                <h3>{cls.name || cls.title}</h3>
-                <span className={`difficulty-badge ${(cls.difficulty || 'beginner').toLowerCase()}`}>
-                  {cls.difficulty || 'Beginner'}
-                </span>
-              </div>
-              
-              <div className="class-details">
-                <p><strong>Trainer:</strong> {cls.trainer?.name || cls.trainer || 'TBA'}</p>
-                <p><strong>When:</strong> {cls.schedule?.day || cls.day} at {cls.schedule?.time || cls.time}</p>
-                <p><strong>Capacity:</strong> {cls.capacity} spots</p>
-              </div>
-              
-              <Link href="/auth/login" className="btn btn-primary w-100 mt-4 text-center">
-                Book Class
-              </Link>
-            </div>
-          ))}
-          {classes.length === 0 && (
-            <p className="text-center text-secondary w-100" style={{ gridColumn: '1 / -1' }}>No classes available at the moment.</p>
-          )}
+  const filtered = activeCategory === 'All'
+    ? classes
+    : classes.filter(c => c.category === activeCategory);
+
+  return (
+    <div className="classes-page animate-fade-in">
+      <header className="classes-hero">
+        <div className="container">
+          <h1>
+            OUR <span className="text-neon">CLASSES</span>
+          </h1>
+          <p className="text-secondary">
+            From high-intensity cardio to mindful yoga — find the class that matches your fire.
+          </p>
         </div>
-      )}
+      </header>
+
+      <div className="container py-8">
+        {loading ? (
+          <div className="text-center text-secondary">Loading classes...</div>
+        ) : (
+          <>
+            {/* Category Filter */}
+            <div className="class-filters">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  className={`filter-btn ${activeCategory === cat ? 'active' : ''}`}
+                  onClick={() => setActiveCategory(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="classes-grid">
+              {filtered.map((cls, index) => (
+                <div key={cls._id} className={`card class-card animate-fade-in stagger-${(index % 5) + 1}`}>
+                  <div className="class-icon">{cls.icon}</div>
+                  <div className="class-header">
+                    <h3>{cls.title}</h3>
+                    <span className={`difficulty-badge ${cls.difficulty?.toLowerCase()}`}>
+                      {cls.difficulty}
+                    </span>
+                  </div>
+                  <span className="class-category-tag">{cls.category}</span>
+                  <p className="class-description">{cls.description}</p>
+                  
+                  <div className="class-details">
+                    <p><strong>Trainer:</strong> {cls.trainer}</p>
+                    <p><strong>When:</strong> {cls.day} at {cls.time}</p>
+                    <p><strong>Capacity:</strong> {cls.capacity} spots</p>
+                  </div>
+                  
+                  <Link href="/contact" className="btn btn-primary w-100 mt-4 text-center">
+                    Book Class
+                  </Link>
+                </div>
+              ))}
+            </div>
+            {filtered.length === 0 && (
+               <div className="text-center text-secondary mt-8">No classes found.</div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

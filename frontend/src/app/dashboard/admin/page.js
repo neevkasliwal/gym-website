@@ -1,261 +1,524 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { paymentAPI } from '../../../services/api';
-import './dashboard.css';
+import { useRouter } from 'next/navigation';
+import { paymentAPI, classAPI, trainerAPI, planAPI, userAPI } from '../../../services/api';
+import './admin.css';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('requests');
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  // Data states
   const [payments, setPayments] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [trainers, setTrainers] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Form states
+  const [showClassForm, setShowClassForm] = useState(false);
+  const [showTrainerForm, setShowTrainerForm] = useState(false);
+  const [showPlanForm, setShowPlanForm] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectingId, setRejectingId] = useState(null);
+
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
+    const stored = localStorage.getItem('user');
+    if (!stored) { router.push('/auth/login'); return; }
+    const parsed = JSON.parse(stored);
+    if (parsed.role !== 'admin') { router.push('/dashboard/member'); return; }
+    setUser(parsed);
+  }, [router]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadData();
+  }, [user, activeTab]);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      if (activeTab === 'requests' || activeTab === 'payment_history' || activeTab === 'approved_rejected') {
         const data = await paymentAPI.getAll();
         setPayments(data);
-      } catch (err) {
-        console.error('Failed to fetch payments:', err);
-      } finally {
-        setLoading(false);
+      } else if (activeTab === 'classes') {
+        const data = await classAPI.getAll();
+        setClasses(data);
+      } else if (activeTab === 'trainers') {
+        const data = await trainerAPI.getAll();
+        setTrainers(data);
+      } else if (activeTab === 'plans') {
+        const data = await planAPI.getAllAdmin();
+        setPlans(data);
+      } else if (activeTab === 'members') {
+        const data = await userAPI.getAll();
+        setMembers(data.filter(u => u.role === 'member'));
       }
-    };
-    fetchPayments();
-  }, []);
-
-  const handleApprove = async (id) => {
-    try {
-      await paymentAPI.approve(id);
-      setPayments(payments.map(p => p._id === id ? { ...p, status: 'approved' } : p));
-      alert('Payment approved and membership activated!');
     } catch (err) {
-      alert('Failed to approve: ' + err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Mock data for other stats
-  const adminData = {
-    name: 'Admin User',
-    stats: {
-      totalMembers: 1245,
-      activeClasses: 24,
-      monthlyRevenue: '$45,200',
-      newSignups: 32
-    },
-    recentBookings: [
-      { id: 1, member: 'Sarah Jenkins', class: 'Yoga Flow', date: 'May 10, 2026', status: 'Confirmed' },
-      { id: 2, member: 'Mike Ross', class: 'CrossFit', date: 'May 10, 2026', status: 'Pending' },
-      { id: 3, member: 'Jessica Pearson', class: 'Pilates', date: 'May 11, 2026', status: 'Confirmed' }
-    ]
+  const showMsg = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
+
+  // PAYMENT ACTIONS
+  const handleApprove = async (id) => {
+    try {
+      await paymentAPI.approve(id);
+      showMsg('Payment approved! Membership activated.');
+      loadData();
+    } catch (err) { setError(err.message); }
   };
 
+  const handleReject = async (id) => {
+    try {
+      await paymentAPI.reject(id, rejectReason);
+      setRejectingId(null);
+      setRejectReason('');
+      showMsg('Payment rejected.');
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  // CLASS CRUD
+  const handleClassSubmit = async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const data = Object.fromEntries(form);
+    data.capacity = Number(data.capacity);
+    try {
+      if (editItem) {
+        await classAPI.update(editItem._id, data);
+        showMsg('Class updated!');
+      } else {
+        await classAPI.create(data);
+        showMsg('Class created!');
+      }
+      setShowClassForm(false);
+      setEditItem(null);
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleDeleteClass = async (id) => {
+    if (!confirm('Delete this class?')) return;
+    try {
+      await classAPI.delete(id);
+      showMsg('Class deleted.');
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  // TRAINER CRUD
+  const handleTrainerSubmit = async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const data = {
+      name: form.get('name'),
+      specialization: form.get('specialization'),
+      experience: Number(form.get('experience')),
+      bio: form.get('bio'),
+      image: form.get('image'),
+      certifications: form.get('certifications').split(',').map(s => s.trim()).filter(Boolean),
+      classes: form.get('classes').split(',').map(s => s.trim()).filter(Boolean),
+    };
+    try {
+      if (editItem) {
+        await trainerAPI.update(editItem._id, data);
+        showMsg('Trainer updated!');
+      } else {
+        await trainerAPI.create(data);
+        showMsg('Trainer added!');
+      }
+      setShowTrainerForm(false);
+      setEditItem(null);
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleDeleteTrainer = async (id) => {
+    if (!confirm('Delete this trainer?')) return;
+    try {
+      await trainerAPI.delete(id);
+      showMsg('Trainer deleted.');
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  // PLAN CRUD
+  const handlePlanSubmit = async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const data = {
+      name: form.get('name'),
+      durationDays: Number(form.get('durationDays')),
+      durationLabel: form.get('durationLabel'),
+      price: Number(form.get('price')),
+      features: form.get('features').split(',').map(s => s.trim()).filter(Boolean),
+      isPopular: form.get('isPopular') === 'on',
+      isActive: form.get('isActive') !== 'off',
+    };
+    try {
+      if (editItem) {
+        await planAPI.update(editItem._id, data);
+        showMsg('Plan updated!');
+      } else {
+        await planAPI.create(data);
+        showMsg('Plan created!');
+      }
+      setShowPlanForm(false);
+      setEditItem(null);
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleDeletePlan = async (id) => {
+    if (!confirm('Delete this plan?')) return;
+    try {
+      await planAPI.delete(id);
+      showMsg('Plan deleted.');
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const tabs = [
+    { key: 'requests', label: 'Requests', icon: '📋' },
+    { key: 'payment_history', label: 'Payment History', icon: '💳' },
+    { key: 'approved_rejected', label: 'History of Approved/Rejected Request', icon: '📄' },
+    { key: 'classes', label: 'Manage Classes', icon: '🏋️' },
+    { key: 'trainers', label: 'Manage Trainers', icon: '👥' },
+    { key: 'plans', label: 'Manage Plans', icon: '💰' },
+    { key: 'members', label: 'Members', icon: '👤' },
+  ];
+
+  if (!user) return null;
+
   return (
-    <div className="admin-dashboard-container">
-      <div className="admin-sidebar">
-        <div className="admin-profile">
-          <div className="admin-avatar">A</div>
-          <h3>{adminData.name}</h3>
-          <p className="admin-role">System Administrator</p>
+    <div className="dashboard-page">
+      <div className="dashboard-header">
+        <div className="container">
+          <h1>Admin <span className="text-neon">Dashboard</span></h1>
+          <p>Welcome back, {user.name}</p>
         </div>
-        <nav className="admin-nav">
-          <button 
-            className={`admin-nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            Overview
-          </button>
-          <button 
-            className={`admin-nav-btn ${activeTab === 'members' ? 'active' : ''}`}
-            onClick={() => setActiveTab('members')}
-          >
-            Manage Members
-          </button>
-          <button 
-            className={`admin-nav-btn ${activeTab === 'classes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('classes')}
-          >
-            Manage Classes
-          </button>
-          <button 
-            className={`admin-nav-btn ${activeTab === 'trainers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('trainers')}
-          >
-            Trainers
-          </button>
-          <button 
-            className={`admin-nav-btn ${activeTab === 'payments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('payments')}
-          >
-            Payments
-          </button>
-        </nav>
       </div>
 
-      <div className="admin-content">
-        {activeTab === 'overview' && (
-          <div className="animate-fade-in">
-            <div className="admin-header-row">
-              <h2>Dashboard Overview</h2>
-              <button className="btn btn-primary btn-sm">Generate Report</button>
-            </div>
-            
-            <div className="admin-stats-grid mt-4">
-              <div className="admin-stat-card">
-                <h3>Total Members</h3>
-                <p className="admin-stat-value">{adminData.stats.totalMembers}</p>
-                <p className="admin-stat-desc text-success">↑ 12% from last month</p>
-              </div>
-              <div className="admin-stat-card">
-                <h3>Active Classes</h3>
-                <p className="admin-stat-value text-accent">{adminData.stats.activeClasses}</p>
-                <p className="admin-stat-desc">This week</p>
-              </div>
-              <div className="admin-stat-card">
-                <h3>Monthly Revenue</h3>
-                <p className="admin-stat-value text-success">{adminData.stats.monthlyRevenue}</p>
-                <p className="admin-stat-desc text-success">↑ 8% from last month</p>
-              </div>
-              <div className="admin-stat-card">
-                <h3>New Signups</h3>
-                <p className="admin-stat-value">{adminData.stats.newSignups}</p>
-                <p className="admin-stat-desc">This week</p>
-              </div>
-            </div>
+      <div className="container dashboard-layout">
+        <aside className="dashboard-sidebar">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              className={`sidebar-btn ${activeTab === tab.key ? 'active' : ''}`}
+              onClick={() => { setActiveTab(tab.key); setShowClassForm(false); setShowTrainerForm(false); setShowPlanForm(false); setEditItem(null); }}
+            >
+              <span className="sidebar-icon">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </aside>
 
-            <div className="admin-section mt-8">
-              <div className="admin-section-header">
-                <h3>Recent Bookings</h3>
-                <button className="btn btn-outline btn-sm">View All</button>
-              </div>
-              
-              <div className="admin-table-container mt-4">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Member</th>
-                      <th>Class</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adminData.recentBookings.map(booking => (
-                      <tr key={booking.id}>
-                        <td>#{booking.id}</td>
-                        <td>{booking.member}</td>
-                        <td>{booking.class}</td>
-                        <td>{booking.date}</td>
-                        <td>
-                          <span className={`status-badge ${booking.status.toLowerCase()}`}>
-                            {booking.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button className="action-btn edit-btn">Edit</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+        <main className="dashboard-content">
+          {error && <div className="alert alert-error">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
 
-        {activeTab === 'members' && (
-          <div className="animate-fade-in">
-            <div className="admin-header-row">
-              <h2>Manage Members</h2>
-              <button className="btn btn-primary btn-sm">+ Add Member</button>
-            </div>
-            <p className="mt-4 text-secondary">Member management interface will go here.</p>
-          </div>
-        )}
+          {loading ? (
+            <div className="loading-spinner">Loading...</div>
+          ) : (
+            <>
+              {/* PAYMENTS TABS */}
+              {(activeTab === 'requests' || activeTab === 'payment_history' || activeTab === 'approved_rejected') && (() => {
+                const filteredPayments = activeTab === 'requests'
+                  ? payments.filter(p => p.status === 'pending')
+                  : activeTab === 'approved_rejected'
+                    ? payments.filter(p => p.status !== 'pending')
+                    : payments;
 
-        {activeTab === 'payments' && (
-          <div className="animate-fade-in">
-            <div className="admin-header-row">
-              <h2>Pending Payments</h2>
-            </div>
-            
-            <div className="admin-table-container mt-4">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Amount</th>
-                    <th>Plan</th>
-                    <th>UTR / Transaction ID</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.filter(p => p.status === 'pending').map(payment => (
-                    <tr key={payment._id}>
-                      <td>{payment.userId?.name || 'Unknown'}</td>
-                      <td>{payment.userId?.email || 'N/A'}</td>
-                      <td>₹{payment.amount}</td>
-                      <td>{payment.planType}</td>
-                      <td className="text-neon">{payment.transactionId}</td>
-                      <td>
-                        <span className="status-badge pending">Pending</span>
-                      </td>
-                      <td>
-                        <button 
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleApprove(payment._id)}
-                        >
-                          Approve
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {payments.filter(p => p.status === 'pending').length === 0 && (
-                    <tr>
-                      <td colSpan="7" className="text-center py-8 text-secondary">
-                        No pending payments to review.
-                      </td>
-                    </tr>
+                const tabTitles = {
+                  requests: { title: 'Pending Requests', desc: 'Review new payment submissions and approve or reject memberships.' },
+                  payment_history: { title: 'Payment History', desc: 'All payment submissions across all statuses.' },
+                  approved_rejected: { title: 'History of Approved/Rejected', desc: 'History of all processed (approved or rejected) requests.' }
+                };
+
+                return (
+                  <div>
+                    <h2>{tabTitles[activeTab].title}</h2>
+                    <p className="text-secondary mb-4">{tabTitles[activeTab].desc}</p>
+                    {filteredPayments.length === 0 ? (
+                      <div className="empty-state">No records found.</div>
+                    ) : (
+                      <div className="table-wrap">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Member</th>
+                              <th>Plan</th>
+                              <th>Amount</th>
+                              <th>UTR Number</th>
+                              <th>Date</th>
+                              <th>Status</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredPayments.map(p => (
+                              <tr key={p._id}>
+                                <td>
+                                  <div className="member-cell">
+                                    <strong>{p.userId?.name || 'Unknown'}</strong>
+                                    <small>{p.userId?.email}</small>
+                                  </div>
+                                </td>
+                                <td>{p.planName}</td>
+                                <td className="amount-cell">₹{p.amount?.toLocaleString('en-IN')}</td>
+                                <td><code className="utr-code">{p.transactionId}</code></td>
+                                <td>{new Date(p.transactionDate).toLocaleDateString('en-IN')}</td>
+                                <td>
+                                  <span className={`status-badge status-${p.status}`}>
+                                    {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
+                                  </span>
+                                </td>
+                                <td>
+                                  {p.status === 'pending' ? (
+                                    <div className="action-buttons">
+                                      <button className="btn-sm btn-approve" onClick={() => handleApprove(p._id)}>✓ Approve</button>
+                                      {rejectingId === p._id ? (
+                                        <div className="reject-form">
+                                          <input
+                                            type="text"
+                                            placeholder="Reason (optional)"
+                                            value={rejectReason}
+                                            onChange={(e) => setRejectReason(e.target.value)}
+                                            className="input-field input-sm"
+                                          />
+                                          <button className="btn-sm btn-reject" onClick={() => handleReject(p._id)}>Confirm</button>
+                                          <button className="btn-sm btn-cancel" onClick={() => setRejectingId(null)}>Cancel</button>
+                                        </div>
+                                      ) : (
+                                        <button className="btn-sm btn-reject" onClick={() => setRejectingId(p._id)}>✕ Reject</button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-secondary">
+                                      {p.status === 'rejected' && p.rejectionReason ? `Rejected: ${p.rejectionReason}` : '—'}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* MANAGE CLASSES */}
+              {activeTab === 'classes' && (
+                <div>
+                  <div className="section-top">
+                    <h2>Manage Classes</h2>
+                    <button className="btn btn-primary" onClick={() => { setShowClassForm(true); setEditItem(null); }}>+ Add Class</button>
+                  </div>
+
+                  {showClassForm && (
+                    <form className="card admin-form" onSubmit={handleClassSubmit}>
+                      <h3>{editItem ? 'Edit Class' : 'Add New Class'}</h3>
+                      <div className="form-grid">
+                        <div className="input-group"><label>Title</label><input name="title" className="input-field" defaultValue={editItem?.title || ''} required /></div>
+                        <div className="input-group"><label>Category</label><input name="category" className="input-field" defaultValue={editItem?.category || ''} required placeholder="e.g. Cardio, Strength" /></div>
+                        <div className="input-group"><label>Trainer</label><input name="trainer" className="input-field" defaultValue={editItem?.trainer || ''} required /></div>
+                        <div className="input-group"><label>Day</label><input name="day" className="input-field" defaultValue={editItem?.day || ''} required placeholder="e.g. Mon / Wed / Fri" /></div>
+                        <div className="input-group"><label>Time</label><input name="time" className="input-field" defaultValue={editItem?.time || ''} required placeholder="e.g. 6:00 AM" /></div>
+                        <div className="input-group"><label>Difficulty</label>
+                          <select name="difficulty" className="input-field" defaultValue={editItem?.difficulty || 'Beginner'}>
+                            <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+                          </select>
+                        </div>
+                        <div className="input-group"><label>Capacity</label><input name="capacity" type="number" className="input-field" defaultValue={editItem?.capacity || 20} required /></div>
+                        <div className="input-group"><label>Icon (emoji)</label><input name="icon" className="input-field" defaultValue={editItem?.icon || '💪'} /></div>
+                      </div>
+                      <div className="input-group"><label>Description</label><textarea name="description" className="input-field" rows="3" defaultValue={editItem?.description || ''} /></div>
+                      <div className="form-actions">
+                        <button type="submit" className="btn btn-primary">{editItem ? 'Update' : 'Create'}</button>
+                        <button type="button" className="btn btn-outline" onClick={() => { setShowClassForm(false); setEditItem(null); }}>Cancel</button>
+                      </div>
+                    </form>
                   )}
-                </tbody>
-              </table>
-            </div>
 
-            <div className="admin-section mt-8">
-              <h3>Approved History</h3>
-              <div className="admin-table-container mt-4">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Amount</th>
-                      <th>Transaction ID</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments.filter(p => p.status === 'approved').map(payment => (
-                      <tr key={payment._id}>
-                        <td>{payment.userId?.name || 'Unknown'}</td>
-                        <td>₹{payment.amount}</td>
-                        <td>{payment.transactionId}</td>
-                        <td>{new Date(payment.transactionDate).toLocaleDateString()}</td>
-                        <td>
-                          <span className="status-badge confirmed">Approved</span>
-                        </td>
-                      </tr>
+                  <div className="items-grid">
+                    {classes.map(cls => (
+                      <div key={cls._id} className="card item-card">
+                        <div className="item-header">
+                          <span className="item-icon">{cls.icon}</span>
+                          <h3>{cls.title}</h3>
+                        </div>
+                        <p className="text-secondary">{cls.category} · {cls.difficulty}</p>
+                        <p className="text-secondary">Trainer: {cls.trainer}</p>
+                        <p className="text-secondary">{cls.day} at {cls.time}</p>
+                        <p className="text-secondary">Capacity: {cls.capacity}</p>
+                        <div className="item-actions">
+                          <button className="btn-sm btn-edit" onClick={() => { setEditItem(cls); setShowClassForm(true); }}>Edit</button>
+                          <button className="btn-sm btn-reject" onClick={() => handleDeleteClass(cls._id)}>Delete</button>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+                  </div>
+                </div>
+              )}
+
+              {/* MANAGE TRAINERS */}
+              {activeTab === 'trainers' && (
+                <div>
+                  <div className="section-top">
+                    <h2>Manage Trainers</h2>
+                    <button className="btn btn-primary" onClick={() => { setShowTrainerForm(true); setEditItem(null); }}>+ Add Trainer</button>
+                  </div>
+
+                  {showTrainerForm && (
+                    <form className="card admin-form" onSubmit={handleTrainerSubmit}>
+                      <h3>{editItem ? 'Edit Trainer' : 'Add New Trainer'}</h3>
+                      <div className="form-grid">
+                        <div className="input-group"><label>Name</label><input name="name" className="input-field" defaultValue={editItem?.name || ''} required /></div>
+                        <div className="input-group"><label>Specialization</label><input name="specialization" className="input-field" defaultValue={editItem?.specialization || ''} required /></div>
+                        <div className="input-group"><label>Experience (years)</label><input name="experience" type="number" className="input-field" defaultValue={editItem?.experience || 0} /></div>
+                        <div className="input-group"><label>Image URL</label><input name="image" className="input-field" defaultValue={editItem?.image || ''} placeholder="https://..." /></div>
+                        <div className="input-group"><label>Certifications (comma separated)</label><input name="certifications" className="input-field" defaultValue={editItem?.certifications?.join(', ') || ''} /></div>
+                        <div className="input-group"><label>Classes (comma separated)</label><input name="classes" className="input-field" defaultValue={editItem?.classes?.join(', ') || ''} /></div>
+                      </div>
+                      <div className="input-group"><label>Bio</label><textarea name="bio" className="input-field" rows="3" defaultValue={editItem?.bio || ''} /></div>
+                      <div className="form-actions">
+                        <button type="submit" className="btn btn-primary">{editItem ? 'Update' : 'Create'}</button>
+                        <button type="button" className="btn btn-outline" onClick={() => { setShowTrainerForm(false); setEditItem(null); }}>Cancel</button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="items-grid">
+                    {trainers.map(t => (
+                      <div key={t._id} className="card item-card trainer-item">
+                        {t.image && <img src={t.image} alt={t.name} className="trainer-thumb" />}
+                        <div className="trainer-item-info">
+                          <h3>{t.name}</h3>
+                          <p className="text-neon">{t.specialization}</p>
+                          <p className="text-secondary">{t.experience} years experience</p>
+                          {t.certifications?.length > 0 && (
+                            <div className="cert-tags">
+                              {t.certifications.map(c => <span key={c} className="cert-tag">{c}</span>)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="item-actions">
+                          <button className="btn-sm btn-edit" onClick={() => { setEditItem(t); setShowTrainerForm(true); }}>Edit</button>
+                          <button className="btn-sm btn-reject" onClick={() => handleDeleteTrainer(t._id)}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* MANAGE PLANS */}
+              {activeTab === 'plans' && (
+                <div>
+                  <div className="section-top">
+                    <h2>Manage Membership Plans</h2>
+                    <button className="btn btn-primary" onClick={() => { setShowPlanForm(true); setEditItem(null); }}>+ Add Plan</button>
+                  </div>
+
+                  {showPlanForm && (
+                    <form className="card admin-form" onSubmit={handlePlanSubmit}>
+                      <h3>{editItem ? 'Edit Plan' : 'Add New Plan'}</h3>
+                      <div className="form-grid">
+                        <div className="input-group"><label>Plan Name</label><input name="name" className="input-field" defaultValue={editItem?.name || ''} required /></div>
+                        <div className="input-group"><label>Duration (days)</label><input name="durationDays" type="number" className="input-field" defaultValue={editItem?.durationDays || 30} required /></div>
+                        <div className="input-group"><label>Duration Label</label><input name="durationLabel" className="input-field" defaultValue={editItem?.durationLabel || ''} required placeholder="e.g. 1 Month, 3 Months" /></div>
+                        <div className="input-group"><label>Price (₹)</label><input name="price" type="number" className="input-field" defaultValue={editItem?.price || ''} required /></div>
+                      </div>
+                      <div className="input-group"><label>Features (comma separated)</label><input name="features" className="input-field" defaultValue={editItem?.features?.join(', ') || ''} /></div>
+                      <div className="checkbox-row">
+                        <label className="checkbox-label"><input type="checkbox" name="isPopular" defaultChecked={editItem?.isPopular || false} /> Mark as Popular</label>
+                        <label className="checkbox-label"><input type="checkbox" name="isActive" defaultChecked={editItem?.isActive !== false} /> Active</label>
+                      </div>
+                      <div className="form-actions">
+                        <button type="submit" className="btn btn-primary">{editItem ? 'Update' : 'Create'}</button>
+                        <button type="button" className="btn btn-outline" onClick={() => { setShowPlanForm(false); setEditItem(null); }}>Cancel</button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="items-grid">
+                    {plans.map(plan => (
+                      <div key={plan._id} className={`card item-card plan-card ${plan.isPopular ? 'popular' : ''} ${!plan.isActive ? 'inactive-plan' : ''}`}>
+                        {plan.isPopular && <div className="popular-badge">Most Popular</div>}
+                        {!plan.isActive && <div className="inactive-badge">Inactive</div>}
+                        <h3>{plan.name}</h3>
+                        <div className="plan-price">₹{plan.price?.toLocaleString('en-IN')}<span>/{plan.durationLabel}</span></div>
+                        <ul className="plan-features">
+                          {plan.features?.map((f, i) => <li key={i}>{f}</li>)}
+                        </ul>
+                        <div className="item-actions">
+                          <button className="btn-sm btn-edit" onClick={() => { setEditItem(plan); setShowPlanForm(true); }}>Edit</button>
+                          <button className="btn-sm btn-reject" onClick={() => handleDeletePlan(plan._id)}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* MEMBERS */}
+              {activeTab === 'members' && (
+                <div>
+                  <h2>Members</h2>
+                  <p className="text-secondary mb-4">All registered members and their membership status.</p>
+                  {members.length === 0 ? (
+                    <div className="empty-state">No members registered yet.</div>
+                  ) : (
+                    <div className="table-wrap">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Expiry</th>
+                            <th>Joined</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {members.map(m => (
+                            <tr key={m._id}>
+                              <td><strong>{m.name}</strong></td>
+                              <td>{m.email}</td>
+                              <td>{m.membershipPlan || '—'}</td>
+                              <td>
+                                <span className={`status-badge status-${m.membershipStatus}`}>
+                                  {m.membershipStatus.charAt(0).toUpperCase() + m.membershipStatus.slice(1)}
+                                </span>
+                              </td>
+                              <td>{m.membershipExpiry ? new Date(m.membershipExpiry).toLocaleDateString('en-IN') : '—'}</td>
+                              <td>{new Date(m.createdAt).toLocaleDateString('en-IN')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </main>
       </div>
     </div>
   );
