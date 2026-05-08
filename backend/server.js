@@ -72,6 +72,17 @@ const connectDB = async () => {
         });
         console.log('Default admin created: admin@ironcore.com / admin123');
       }
+
+      const userExists = await User.findOne({ email: 'user@ironcore.com' });
+      if (!userExists) {
+        await User.create({
+          name: 'Test Member',
+          email: 'user@ironcore.com',
+          password: 'user123',
+          role: 'member'
+        });
+        console.log('Default member created: user@ironcore.com / user123');
+      }
     } else {
       await mongoose.connect(process.env.MONGO_URI);
       console.log('MongoDB Connected');
