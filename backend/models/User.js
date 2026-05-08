@@ -4,9 +4,11 @@ const bcrypt = require('bcrypt');
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  phone: { type: String },
   password: { type: String, required: true },
   role: { type: String, enum: ['member', 'admin'], default: 'member' },
-  membershipStatus: { type: String, default: 'inactive' },
+  membershipStatus: { type: String, enum: ['inactive', 'pending', 'active', 'expired'], default: 'inactive' },
+  membershipPlan: { type: String },
   membershipExpiry: { type: Date, default: null },
 }, { timestamps: true });
 

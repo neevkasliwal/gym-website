@@ -200,16 +200,20 @@
 
 .qr-section {
   background-color: #fff;
-  padding: 20px;
+  padding: 16px;
   border-radius: var(--radius-md);
   margin-bottom: 25px;
   color: #000;
+  display: inline-block;
+  width: auto;
 }
 
 .payment-qr {
-  width: 200px;
-  height: 200px;
+  width: 150px;
+  height: 150px;
   object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 .mb-6 { margin-bottom: 1.5rem; }

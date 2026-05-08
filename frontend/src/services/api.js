@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 // Helper to get auth token
 const getAuthHeader = () => {
@@ -68,19 +68,43 @@ export const classAPI = {
   delete: (id) => fetchAPI(`/classes/${id}`, { method: 'DELETE' }),
 };
 
-// Bookings API
-export const bookingAPI = {
-  getMyBookings: () => fetchAPI('/bookings/my-bookings'),
-  create: (bookingData) => fetchAPI('/bookings', {
+// Trainers API
+export const trainerAPI = {
+  getAll: () => fetchAPI('/trainers'),
+  create: (data) => fetchAPI('/trainers', {
     method: 'POST',
-    body: JSON.stringify(bookingData),
+    body: JSON.stringify(data),
   }),
-  cancel: (id) => fetchAPI(`/bookings/${id}/cancel`, { method: 'PUT' }),
-  getAll: () => fetchAPI('/bookings'), // Admin only
-  updateStatus: (id, status) => fetchAPI(`/bookings/${id}/status`, {
+  update: (id, data) => fetchAPI(`/trainers/${id}`, {
     method: 'PUT',
-    body: JSON.stringify({ status }),
-  }), // Admin only
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => fetchAPI(`/trainers/${id}`, { method: 'DELETE' }),
+};
+
+// Plans API
+export const planAPI = {
+  getAll: () => fetchAPI('/plans'),
+  getAllAdmin: () => fetchAPI('/plans/all'),
+  create: (data) => fetchAPI('/plans', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => fetchAPI(`/plans/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => fetchAPI(`/plans/${id}`, { method: 'DELETE' }),
+};
+
+// Users API (Admin)
+export const userAPI = {
+  getAll: () => fetchAPI('/users'),
+  update: (id, data) => fetchAPI(`/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id) => fetchAPI(`/users/${id}`, { method: 'DELETE' }),
 };
 
 // Payments API
@@ -90,10 +114,12 @@ export const paymentAPI = {
     body: JSON.stringify(paymentData),
   }),
   getMyPayments: () => fetchAPI('/payments/user'),
-  getAll: () => fetchAPI('/payments'), // Admin only
-  approve: (id) => fetchAPI(`/payments/${id}/approve`, {
+  getAll: () => fetchAPI('/payments'),
+  approve: (id) => fetchAPI(`/payments/${id}/approve`, { method: 'PUT' }),
+  reject: (id, reason) => fetchAPI(`/payments/${id}/reject`, {
     method: 'PUT',
-  }), // Admin only
+    body: JSON.stringify({ reason }),
+  }),
 };
 
 // Contact API

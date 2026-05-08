@@ -124,9 +124,6 @@ export default function Login() {
           <p className="text-secondary">
             Don't have an account? <Link href="/auth/register" className="text-neon">Register</Link>
           </p>
-          <p className="text-secondary mt-2">
-            <Link href="/auth/forgot-password">Forgot Password?</Link>
-          </p>
         </div>
       </div>
     </div>

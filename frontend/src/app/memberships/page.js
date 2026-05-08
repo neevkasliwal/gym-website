@@ -1,35 +1,29 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { planAPI } from '../../services/api';
 import './memberships.css';
 
-const PLANS = [
-  {
-    name: 'Basic',
-    price: 49,
-    period: 'mo',
-    tagline: 'Everything you need to get started.',
-    features: ['Gym floor access', 'Locker room access', 'Free Wi‑Fi'],
-    ctaVariant: 'outline',
-  },
-  {
-    name: 'Standard',
-    price: 79,
-    period: 'mo',
-    tagline: 'Best value for consistent training.',
-    features: ['All Basic features', 'Unlimited classes', '1 PT session/month'],
-    featured: true,
-    ctaVariant: 'primary',
-  },
-  {
-    name: 'Premium',
-    price: 119,
-    period: 'mo',
-    tagline: 'Maximum results with maximum support.',
-    features: ['All Standard features', 'Unlimited PT sessions', 'Spa & Recovery access'],
-    ctaVariant: 'outline',
-  },
-];
-
 export default function MembershipsPage() {
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const data = await planAPI.getAll();
+        setPlans(data);
+      } catch {
+        // Fallback to empty
+        setPlans([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlans();
+  }, []);
+
   return (
     <div className="memberships-page animate-fade-in">
       <header className="memberships-hero">
@@ -38,7 +32,7 @@ export default function MembershipsPage() {
             MEMBERSHIPS <span className="text-neon">THAT FIT</span>
           </h1>
           <p className="memberships-subtitle text-secondary">
-            No hidden fees. Cancel anytime. Upgrade when you’re ready.
+            No hidden fees. Cancel anytime. Upgrade when you're ready.
           </p>
           <div className="memberships-cta">
             <Link href="/auth/register" className="btn btn-primary">
@@ -57,48 +51,51 @@ export default function MembershipsPage() {
           <h2>
             Choose Your <span className="text-neon">Plan</span>
           </h2>
-          <p className="text-secondary">Pick a plan today. Change it anytime.</p>
+          <p className="text-secondary">Pick a plan today. All prices in ₹ (INR).</p>
         </div>
 
-        <div className="memberships-grid">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={[
-                'card',
-                'membership-card',
-                plan.featured ? 'featured' : '',
-              ].join(' ')}
-            >
-              {plan.featured && <div className="popular-badge">Most Popular</div>}
-
-              <h3 className="membership-name">{plan.name}</h3>
-              <div className="membership-price">
-                ${plan.price}
-                <span>/{plan.period}</span>
-              </div>
-              <p className="membership-tagline text-secondary">{plan.tagline}</p>
-
-              <ul className="membership-features">
-                {plan.features.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-
-              <Link
-                href="/auth/register"
-                className={`btn ${plan.ctaVariant === 'primary' ? 'btn-primary' : 'btn-outline'} w-100 mt-4 text-center`}
+        {loading ? (
+          <div className="text-center text-secondary">Loading plans...</div>
+        ) : (
+          <div className="memberships-grid">
+            {plans.map((plan) => (
+              <div
+                key={plan._id}
+                className={[
+                  'card',
+                  'membership-card',
+                  plan.isPopular ? 'featured' : '',
+                ].join(' ')}
               >
-                Select {plan.name}
-              </Link>
-            </div>
-          ))}
-        </div>
+                {plan.isPopular && <div className="popular-badge">Most Popular</div>}
+
+                <h3 className="membership-name">{plan.name}</h3>
+                <div className="membership-price">
+                  ₹{plan.price?.toLocaleString('en-IN')}
+                  <span>/{plan.durationLabel}</span>
+                </div>
+
+                <ul className="membership-features">
+                  {plan.features?.map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
+                </ul>
+
+                <Link
+                  href="/auth/register"
+                  className={`btn ${plan.isPopular ? 'btn-primary' : 'btn-outline'} w-100 mt-4 text-center`}
+                >
+                  Select {plan.name}
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
 
         <section className="membership-faq mt-8">
           <div className="section-header text-center mb-8">
             <h2>
-              Questions? <span className="text-neon">We’ve got you</span>
+              Questions? <span className="text-neon">We've got you</span>
             </h2>
             <p className="text-secondary">Quick answers before you join.</p>
           </div>
@@ -109,8 +106,8 @@ export default function MembershipsPage() {
               <p className="text-secondary">Yes. Your membership can be cancelled or paused anytime.</p>
             </div>
             <div className="card faq-item">
-              <h3>Is there a free trial?</h3>
-              <p className="text-secondary">You can try a class for free before committing to a plan.</p>
+              <h3>How do I pay?</h3>
+              <p className="text-secondary">Pay via UPI (GPay, PhonePe, Paytm). Submit your UTR number and we'll verify within 24 hours.</p>
             </div>
             <div className="card faq-item">
               <h3>Can I upgrade later?</h3>
@@ -122,4 +119,3 @@ export default function MembershipsPage() {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createPayment, getUserPayments, getAllPayments, approvePayment } = require('../controllers/paymentController');
+const { createPayment, getUserPayments, getAllPayments, approvePayment, rejectPayment } = require('../controllers/paymentController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -12,5 +12,8 @@ router.route('/user')
 
 router.route('/:id/approve')
   .put(protect, admin, approvePayment);
+
+router.route('/:id/reject')
+  .put(protect, admin, rejectPayment);
 
 module.exports = router;
